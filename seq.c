@@ -5,12 +5,14 @@
 #define M 1024
 #define N 2048
 
-void matrixVectorMultiply(int *matrix, int *vector, int *result) {
+void matrixVectorMultiplyWithReLU(int *matrix, int *vector, int *result) {
     for (int i = 0; i < M; i++) {
         result[i] = 0;
         for (int j = 0; j < N; j++) {
             result[i] += matrix[i * N + j] * vector[j];
         }
+        // Apply ReLU activation
+        result[i] = (result[i] > 0) ? result[i] : 0;
     }
 }
 
@@ -32,14 +34,12 @@ int main() {
 
     startTime = clock();
 
-    // Perform matrix-vector multiplication in serial mode
-    matrixVectorMultiply(serialMatrix, serialVector, serialResult);
+    // Perform matrix-vector multiplication with ReLU activation in serial mode
+    matrixVectorMultiplyWithReLU(serialMatrix, serialVector, serialResult);
 
     endTime = clock();
     double serialTime = (double)(endTime - startTime) / CLOCKS_PER_SEC;
     printf("Serial execution time: %f seconds\n", serialTime);
-
-   
 
     // Cleanup
     free(serialMatrix);
