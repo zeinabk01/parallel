@@ -28,39 +28,7 @@ int main(int argc, char **argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     // Timing variables
-    double startTime, endTime, serialTime, parallelTime;
-
-    // Serial version timing and computation (only executed by rank 0)
-    if (rank == 0) {
-        startTime = MPI_Wtime();
-
-        // Allocate memory for serial matrix, vector, and result
-        int *serialMatrix = (int *)malloc(M * N * sizeof(int));
-        int *serialVector = (int *)malloc(N * sizeof(int));
-        int *serialResult = (int *)malloc(M * sizeof(int));
-
-        // Initialize serial matrix and vector (you may replace this with your own initialization logic)
-        for (int i = 0; i < M * N; i++) {
-            serialMatrix[i] = 1;
-        }
-
-        for (int i = 0; i < N; i++) {
-            serialVector[i] = 1;
-        }
-
-        // Perform serial matrix-vector multiplication
-        matrixVectorMultiply(serialMatrix, serialVector, serialResult, M);
-
-        // Free memory for serial version
-        free(serialMatrix);
-        free(serialVector);
-        free(serialResult);
-
-        // Measure and print serial execution time
-        endTime = MPI_Wtime();
-        serialTime = endTime - startTime;
-        printf("Serial execution time: %f seconds\n", serialTime);
-    }
+    double startTime, endTime, parallelTime;
 
     // Parallel version timing and computation
     MPI_Barrier(MPI_COMM_WORLD);
