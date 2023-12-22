@@ -34,18 +34,18 @@ int main(int argc, char **argv) {
     MPI_Barrier(MPI_COMM_WORLD);
     startTime = MPI_Wtime();
 
-    // Calculate local size for each process
+    // Calculate local size and starting row for each process
     int localSize = M / world_size;
+    int startRow = rank * localSize;
 
-    // Allocate memory for local matrix, vector, local result, and gathered results
+    // Allocate memory for local matrix, vector, and local result
     int *localMatrix = (int *)malloc(localSize * N * sizeof(int));
     int *vector = (int *)malloc(N * sizeof(int));
     int *localResult = (int *)malloc(localSize * sizeof(int));
-    int *gatheredResults = (int *)malloc(M * sizeof(int));
 
-    // Initialize local matrix and vector (you may replace this with your own initialization logic)
+    // Initialize local matrix and vector concurrently
     for (int i = 0; i < localSize * N; i++) {
-        localMatrix[i] = rank + 1;
+        localMatrix[i] = startRow + 1;
     }
 
     for (int i = 0; i < N; i++) {
@@ -56,6 +56,10 @@ int main(int argc, char **argv) {
     matrixVectorMultiply(localMatrix, vector, localResult, localSize);
 
     // Gather local results to the root process
+    int *gatheredResults = NULL;
+    if (rank == 0) {
+        gatheredResults = (int *)malloc(M * sizeof(int));
+    }
     MPI_Gather(localResult, localSize, MPI_INT, gatheredResults, localSize, MPI_INT, 0, MPI_COMM_WORLD);
 
     // Free memory for parallel version
@@ -74,7 +78,9 @@ int main(int argc, char **argv) {
     }
 
     // Free memory for gathered results
-    free(gatheredResults);
+    if (rank == 0) {
+        free(gatheredResults);
+    }
 
     // Finalize MPI
     MPI_Finalize();
