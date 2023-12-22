@@ -5,8 +5,8 @@
 #define M 1024
 #define N 2048
 
-// Function to perform matrix-vector multiplication for a local portion
-void matrixVectorMultiply(int *localMatrix, int *vector, int *localResult, int localSize) {
+// Function to perform matrix-vector multiplication with ReLU activation for a local portion
+void matrixVectorMultiplyWithReLU(int *localMatrix, int *vector, int *localResult, int localSize) {
     // Loop over rows of the local matrix
     for (int i = 0; i < localSize; i++) {
         localResult[i] = 0;
@@ -15,6 +15,8 @@ void matrixVectorMultiply(int *localMatrix, int *vector, int *localResult, int l
             // Multiply corresponding elements and accumulate the result
             localResult[i] += localMatrix[i * N + j] * vector[j];
         }
+        // Apply ReLU activation
+        localResult[i] = (localResult[i] > 0) ? localResult[i] : 0;
     }
 }
 
@@ -52,8 +54,8 @@ int main(int argc, char **argv) {
         vector[i] = 1;
     }
 
-    // Perform local matrix-vector multiplication
-    matrixVectorMultiply(localMatrix, vector, localResult, localSize);
+    // Perform local matrix-vector multiplication with ReLU activation
+    matrixVectorMultiplyWithReLU(localMatrix, vector, localResult, localSize);
 
     // Gather local results to the root process
     int *gatheredResults = NULL;
