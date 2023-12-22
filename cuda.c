@@ -4,20 +4,42 @@
 
 #define M 1024
 #define N 2048
-#define THREADS_PER_BLOCK 256
+#define THREADS_PER_BLOCK 512
+#define BLOCKS (M + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK
 
 __global__ void matrixVectorMultiplyWithReLU(int *matrix, int *vector, int *result) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    __shared__ int partialResult[THREADS_PER_BLOCK];
 
-    if (i < M) {
-        result[i] = 0;
+    int tid = threadIdx.x;
+    int bid = blockIdx.x;
+    int i = bid * THREADS_PER_BLOCK + tid;
 
+    partialResult[tid] = 0;
+
+    while (i < M) {
+        int sum = 0;
         for (int j = 0; j < N; j++) {
-            result[i] += matrix[i * N + j] * vector[j];
+            sum += matrix[i * N + j] * vector[j];
         }
-
         // Apply ReLU activation
-        result[i] = (result[i] > 0) ? result[i] : 0;
+        partialResult[tid] = (sum > 0) ? sum : 0;
+
+        i += THREADS_PER_BLOCK * gridDim.x; // Move to the next block
+    }
+
+    __syncthreads();
+
+    // Perform a parallel reduction to obtain the final result
+    for (int stride = THREADS_PER_BLOCK / 2; stride > 0; stride >>= 1) {
+        if (tid < stride) {
+            partialResult[tid] += partialResult[tid + stride];
+        }
+        __syncthreads();
+    }
+
+    // Write the final result to global memory
+    if (tid == 0) {
+        result[bid] = partialResult[0];
     }
 }
 
@@ -50,8 +72,10 @@ int main() {
     startTime = clock();
 
     // Perform matrix-vector multiplication with ReLU activation using CUDA
-    matrixVectorMultiplyWithReLU<<<(M + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(
-        d_matrix, d_vector, d_result);
+    matrixVectorMultiplyWithReLU<<<BLOCKS, THREADS_PER_BLOCK>>>(d_matrix, d_vector, d_result);
+
+    // Synchronize to make sure the GPU has completed the computation
+    cudaDeviceSynchronize();
 
     // Copy result back to host
     cudaMemcpy(parallelResult, d_result, M * sizeof(int), cudaMemcpyDeviceToHost);
