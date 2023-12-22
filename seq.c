@@ -23,13 +23,13 @@ int main() {
     int *serialVector = (int *)malloc(N * sizeof(int));
     int *serialResult = (int *)malloc(M * sizeof(int));
 
-    // Initialize serialMatrix and serialVector (you may replace this with your own initialization logic)
+    // Initialize serialMatrix and serialVector 
     for (int i = 0; i < M * N; i++) {
-        serialMatrix[i] = 1;  // Example initialization
+        serialMatrix[i] = 1; 
     }
 
     for (int i = 0; i < N; i++) {
-        serialVector[i] = 1;  // Example initialization
+        serialVector[i] = 1;  
     }
 
     startTime = clock();
